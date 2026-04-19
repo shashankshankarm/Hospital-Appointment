@@ -2,12 +2,13 @@ package com.hospitalappointment.security;
 
 import com.hospitalappointment.entity.User;
 import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.stereotype.Service;
 
 import javax.crypto.SecretKey;
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Date;
@@ -20,6 +21,9 @@ public class JwtService {
 
     public JwtService(JwtProperties jwtProperties) {
         this.jwtProperties = jwtProperties;
+        if (jwtProperties.secret() == null || jwtProperties.secret().isBlank() || jwtProperties.secret().length() < 32) {
+            throw new IllegalStateException("JWT secret must be configured and contain at least 32 characters");
+        }
     }
 
     public String generateAccessToken(User user) {
@@ -50,12 +54,20 @@ public class JwtService {
     }
 
     public boolean isTokenValid(String token) {
-        Date expiration = parseClaims(token).getExpiration();
-        return expiration.after(new Date());
+        try {
+            Date expiration = parseClaims(token).getExpiration();
+            return expiration.after(new Date());
+        } catch (JwtException | IllegalArgumentException ex) {
+            return false;
+        }
     }
 
     public long accessTokenExpirySeconds() {
         return jwtProperties.accessTokenExpirationMinutes() * 60;
+    }
+
+    public long refreshTokenExpiryDays() {
+        return jwtProperties.refreshTokenExpirationDays();
     }
 
     private Claims parseClaims(String token) {
@@ -67,7 +79,7 @@ public class JwtService {
     }
 
     private SecretKey signingKey() {
-        byte[] keyBytes = Decoders.BASE64.decode(java.util.Base64.getEncoder().encodeToString(jwtProperties.secret().getBytes()));
+        byte[] keyBytes = jwtProperties.secret().getBytes(StandardCharsets.UTF_8);
         return Keys.hmacShaKeyFor(keyBytes);
     }
 }

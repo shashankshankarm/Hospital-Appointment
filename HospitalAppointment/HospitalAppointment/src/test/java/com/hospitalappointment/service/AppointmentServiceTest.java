@@ -24,6 +24,7 @@ import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class AppointmentServiceTest {
+    private static final LocalDateTime FIXED_TIME = LocalDateTime.of(2030, 1, 1, 9, 0);
 
     @Mock
     private AppointmentRepository appointmentRepository;
@@ -55,7 +56,7 @@ class AppointmentServiceTest {
 
     @Test
     void create_shouldThrowConflict_whenSlotAlreadyBooked() {
-        LocalDateTime start = LocalDateTime.now().plusDays(1);
+        LocalDateTime start = FIXED_TIME.plusDays(1);
         LocalDateTime end = start.plusMinutes(30);
         AppointmentRequest request = new AppointmentRequest(1L, 2L, start, end, "Consultation");
 
@@ -69,7 +70,7 @@ class AppointmentServiceTest {
 
     @Test
     void create_shouldThrowConflict_whenEndBeforeStart() {
-        LocalDateTime start = LocalDateTime.now().plusDays(1);
+        LocalDateTime start = FIXED_TIME.plusDays(1);
         LocalDateTime end = start.minusMinutes(5);
         AppointmentRequest request = new AppointmentRequest(1L, 2L, start, end, "Consultation");
 

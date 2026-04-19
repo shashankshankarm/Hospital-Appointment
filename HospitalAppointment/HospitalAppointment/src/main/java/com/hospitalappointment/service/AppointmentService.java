@@ -51,7 +51,7 @@ public class AppointmentService {
         Doctor doctor = doctorRepository.findById(request.doctorId())
                 .orElseThrow(() -> new NotFoundException("Doctor not found"));
 
-        ensureNoConflict(doctor.getId(), request.startTime(), request.endTime());
+        ensureNoConflict(doctor.getId(), request.startTime(), request.endTime(), null);
 
         Appointment appointment = new Appointment();
         appointment.setPatient(patient);
@@ -77,7 +77,7 @@ public class AppointmentService {
             throw new ConflictException("Cannot reschedule a completed/cancelled appointment");
         }
 
-        ensureNoConflict(appointment.getDoctor().getId(), request.startTime(), request.endTime());
+        ensureNoConflict(appointment.getDoctor().getId(), request.startTime(), request.endTime(), appointment.getId());
         appointment.setStartTime(request.startTime());
         appointment.setEndTime(request.endTime());
         appointment = appointmentRepository.save(appointment);
@@ -111,9 +111,17 @@ public class AppointmentService {
                 .orElseThrow(() -> new NotFoundException("Appointment not found"));
     }
 
-    private void ensureNoConflict(Long doctorId, LocalDateTime startTime, LocalDateTime endTime) {
-        boolean conflict = appointmentRepository.existsByDoctorIdAndStatusInAndStartTimeLessThanAndEndTimeGreaterThan(
+    private void ensureNoConflict(Long doctorId, LocalDateTime startTime, LocalDateTime endTime, Long excludedAppointmentId) {
+        boolean conflict = excludedAppointmentId == null
+                ? appointmentRepository.existsByDoctorIdAndStatusInAndStartTimeLessThanAndEndTimeGreaterThan(
                 doctorId,
+                ACTIVE_STATUSES,
+                endTime,
+                startTime
+        )
+                : appointmentRepository.existsByDoctorIdAndIdNotAndStatusInAndStartTimeLessThanAndEndTimeGreaterThan(
+                doctorId,
+                excludedAppointmentId,
                 ACTIVE_STATUSES,
                 endTime,
                 startTime

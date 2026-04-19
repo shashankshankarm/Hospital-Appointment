@@ -2,6 +2,7 @@ package com.hospitalappointment.service;
 
 import com.hospitalappointment.common.exception.BadRequestException;
 import com.hospitalappointment.common.exception.NotFoundException;
+import com.hospitalappointment.common.util.NormalizationUtils;
 import com.hospitalappointment.dto.auth.*;
 import com.hospitalappointment.entity.Patient;
 import com.hospitalappointment.entity.RefreshToken;
@@ -31,10 +32,12 @@ public class AuthService {
     private final AuthenticationManager authenticationManager;
     private final JwtService jwtService;
     private final AuditLogService auditLogService;
+    private final MrnGeneratorService mrnGeneratorService;
 
     public AuthService(UserRepository userRepository, RoleRepository roleRepository, PatientRepository patientRepository,
                        RefreshTokenRepository refreshTokenRepository, PasswordEncoder passwordEncoder,
-                       AuthenticationManager authenticationManager, JwtService jwtService, AuditLogService auditLogService) {
+                       AuthenticationManager authenticationManager, JwtService jwtService, AuditLogService auditLogService,
+                       MrnGeneratorService mrnGeneratorService) {
         this.userRepository = userRepository;
         this.roleRepository = roleRepository;
         this.patientRepository = patientRepository;
@@ -43,6 +46,7 @@ public class AuthService {
         this.authenticationManager = authenticationManager;
         this.jwtService = jwtService;
         this.auditLogService = auditLogService;
+        this.mrnGeneratorService = mrnGeneratorService;
     }
 
     @Transactional
@@ -56,7 +60,7 @@ public class AuthService {
 
         User user = new User();
         user.setUsername(request.username().trim());
-        user.setEmail(request.email().trim().toLowerCase());
+        user.setEmail(NormalizationUtils.normalizeEmail(request.email()));
         user.setPasswordHash(passwordEncoder.encode(request.password()));
 
         Role patientRole = roleRepository.findByName(RoleName.PATIENT)
@@ -65,13 +69,13 @@ public class AuthService {
         user = userRepository.save(user);
 
         Patient patient = new Patient();
-        patient.setMrn(generateMrn(user.getId()));
+        patient.setMrn(mrnGeneratorService.generate(request.dateOfBirth()));
         patient.setFirstName(request.firstName().trim());
         patient.setLastName(request.lastName().trim());
         patient.setDateOfBirth(request.dateOfBirth());
         patient.setGender(request.gender().trim());
         patient.setPhone(request.phone().trim());
-        patient.setEmail(request.email().trim().toLowerCase());
+        patient.setEmail(NormalizationUtils.normalizeEmail(request.email()));
         patient.setAddress(request.address());
         patient.setUser(user);
         patientRepository.save(patient);
@@ -113,7 +117,7 @@ public class AuthService {
         RefreshToken refreshToken = new RefreshToken();
         refreshToken.setUser(user);
         refreshToken.setToken(refreshTokenValue);
-        refreshToken.setExpiresAt(LocalDateTime.now().plusDays(7));
+        refreshToken.setExpiresAt(LocalDateTime.now().plusDays(jwtService.refreshTokenExpiryDays()));
         refreshToken.setRevoked(false);
         refreshTokenRepository.save(refreshToken);
 
@@ -127,7 +131,4 @@ public class AuthService {
         );
     }
 
-    private String generateMrn(Long userId) {
-        return "MRN" + String.format("%08d", userId);
-    }
 }
