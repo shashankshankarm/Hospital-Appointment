@@ -10,7 +10,7 @@ Spring Boot backend for hospital appointment and patient records management.
 
 ### 2) Go to project directory
 ```bash
-cd HospitalAppointment/HospitalAppointment
+cd <project-directory-containing-pom.xml>
 ```
 
 ### 3) Set required environment variables
