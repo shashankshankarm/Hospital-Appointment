@@ -4,6 +4,8 @@ import com.hospitalappointment.dto.doctor.DoctorRequest;
 import com.hospitalappointment.dto.doctor.DoctorResponse;
 import com.hospitalappointment.service.DoctorService;
 import jakarta.validation.Valid;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
@@ -22,8 +24,8 @@ public class DoctorController {
 
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
-    public DoctorResponse create(@RequestBody @Valid DoctorRequest request, Authentication authentication) {
-        return doctorService.create(request, authentication.getName());
+    public ResponseEntity<DoctorResponse> create(@RequestBody @Valid DoctorRequest request, Authentication authentication) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(doctorService.create(request, authentication.getName()));
     }
 
     @GetMapping("/{id}")
