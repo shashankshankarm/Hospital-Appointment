@@ -13,6 +13,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.LocalDateTime;
 import java.util.Optional;
@@ -42,10 +43,12 @@ class AppointmentServiceTest {
     @BeforeEach
     void setUp() {
         doctor = new Doctor();
+        ReflectionTestUtils.setField(doctor, "id", 2L);
         doctor.setFirstName("Alex");
         doctor.setLastName("Grey");
 
         patient = new Patient();
+        ReflectionTestUtils.setField(patient, "id", 1L);
         patient.setFirstName("Sam");
         patient.setLastName("Ray");
     }
