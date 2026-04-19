@@ -6,6 +6,8 @@ import com.hospitalappointment.dto.appointment.RescheduleRequest;
 import com.hospitalappointment.service.AppointmentService;
 import jakarta.validation.Valid;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
@@ -25,8 +27,8 @@ public class AppointmentController {
 
     @PostMapping
     @PreAuthorize("hasAnyRole('ADMIN','RECEPTIONIST','PATIENT')")
-    public AppointmentResponse create(@RequestBody @Valid AppointmentRequest request, Authentication authentication) {
-        return appointmentService.create(request, authentication.getName());
+    public ResponseEntity<AppointmentResponse> create(@RequestBody @Valid AppointmentRequest request, Authentication authentication) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(appointmentService.create(request, authentication.getName()));
     }
 
     @PatchMapping("/{id}/reschedule")
